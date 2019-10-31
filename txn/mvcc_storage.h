@@ -41,6 +41,9 @@ class MVCCStorage : public Storage {
   
   virtual ~MVCCStorage();
 
+  //mengembalikan version id terbesar dari data dengan key tertentu
+  int MaxVersionId(Key key, int txn_unique_id);
+
  private:
  
   friend class TxnProcessor;
