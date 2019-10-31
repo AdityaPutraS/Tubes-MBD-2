@@ -43,8 +43,8 @@ void MVCCStorage::Unlock(Key key) {
 int MVCCStorage::MaxVersionId(Key key, int txn_unique_id){
     int max_version_id_ = 0;
     for (deque<Version*>::iterator it = mvcc_data_[key]->begin(); it != mvcc_data_[key]->end(); ++it) {
-        if (*it->version_id_ > max_version_id_ && *it->version_id_ <= txn_unique_id){
-            max_version_id_ = *it->version_id_;
+        if ((*it)->version_id_ > max_version_id_ && (*it)->version_id_ <= txn_unique_id){
+            max_version_id_ = (*it)->version_id_;
         }
     }
     return max_version_id_;
@@ -59,11 +59,11 @@ bool MVCCStorage::Read(Key key, Value* result, int txn_unique_id) {
     if (mvcc_data_.count(key)) {
         int max_version_id_ = MaxVersionId(key, txn_unique_id);
         for (deque<Version*>::iterator it = mvcc_data_[key]->begin(); it != mvcc_data_[key]->end(); ++it) {
-            if (*it->version_id_ == max_version_id_){
-                if (txn_unique_id > *it->max_read_id_){
-                    *it->max_read_id_ = txn_unique_id;
+            if ((*it)->version_id_ == max_version_id_){
+                if (txn_unique_id > (*it)->max_read_id_){
+                    (*it)->max_read_id_ = txn_unique_id;
                 }
-                *result = *it->value_;
+                *result = (*it)->value_;
                 return true;
             }
         }
@@ -85,8 +85,8 @@ bool MVCCStorage::CheckWrite(Key key, int txn_unique_id) {
     if (mvcc_data_.count(key)){
         int max_version_id_ = MaxVersionId(key, txn_unique_id);
         for (deque<Version*>::iterator it = mvcc_data_[key]->begin(); it != mvcc_data_[key]->end(); ++it) {
-            if (*it->version_id_ == max_version_id_){
-                return txn_unique_id >= *it->max_read_id_;
+            if ((*it)->version_id_ == max_version_id_){
+                return txn_unique_id >= (*it)->max_read_id_;
             }
         }
     }
@@ -107,8 +107,8 @@ void MVCCStorage::Write(Key key, Value value, int txn_unique_id) {
     if(mvcc_data_.count(key)){
         int max_version_id_ = MaxVersionId(key, txn_unique_id);
         for (deque<Version*>::iterator it = mvcc_data_[key]->begin(); it != mvcc_data_[key]->end(); ++it) {
-            if (*it->version_id_ == max_version_id_ && *it->version_id_ == txn_unique_id){
-                *it->value_ = value;
+            if ((*it)->version_id_ == max_version_id_ && (*it)->version_id_ == txn_unique_id){
+                (*it)->value_ = value;
                 return;
             }
         }
@@ -120,7 +120,7 @@ void MVCCStorage::Write(Key key, Value value, int txn_unique_id) {
     newVersion->value_ = value;
     newVersion->max_read_id_ = txn_unique_id;
     newVersion->version_id_ = txn_unique_id;
-    mvcc_data_[key]->push_back(&newVersion);
+    mvcc_data_[key]->push_back(newVersion);
 }
 
 

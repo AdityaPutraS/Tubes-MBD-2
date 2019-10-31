@@ -439,14 +439,14 @@ void TxnProcessor::RunMVCCScheduler()
             {
                 //Apply all writes then release all locks
                 ApplyWrites(cek);
-                MVCCUnlockWriteKeys(cek)
+                MVCCUnlockWriteKeys(cek);
                 //Mark transaction as commited
                 cek->status_ = COMMITTED;
             }
             else
             {
                 //Release all locks
-                MVCCUnlockWriteKeys(cek)
+                MVCCUnlockWriteKeys(cek);
                 //Cleanup txn
                 cek->reads_.clear();
                 cek->writes_.clear();
@@ -464,7 +464,7 @@ void TxnProcessor::RunMVCCScheduler()
     }
 }
 
-void MVCCStorage::MVCCExecuteTxn(Txn* txn){
+void TxnProcessor::MVCCExecuteTxn(Txn* txn){
     // Read everything in from readset.
     for (set<Key>::iterator it = txn->readset_.begin();
              it != txn->readset_.end(); ++it)
@@ -496,25 +496,31 @@ void MVCCStorage::MVCCExecuteTxn(Txn* txn){
     completed_txns_.Push(txn);
 }
 
-bool MVCCStorage::MVCCCheckWrites(Txn* txn){
+bool TxnProcessor::MVCCCheckWrites(Txn* txn){
     bool result = true;
     for (set<Key>::iterator it = txn->writeset_.begin(); it != txn->writeset_.end() && result; ++it)
     {
-        result = result && storage_.CheckWrite(*it, txn->unique_id_);
+        result = storage_->CheckWrite(*it, txn->unique_id_);
     }
     return result;
 }
 
-void MVCCStorage::MVCCLockWriteKeys(Txn* txn){
+void TxnProcessor::MVCCLockWriteKeys(Txn* txn){
     for (set<Key>::iterator it = txn->writeset_.begin();it != txn->writeset_.end(); ++it)
     {
-        storage_.Lock(*it);
+        storage_->Lock(*it);
     }
 }
 
-void MVCCStorage::MVCCUnlockWriteKeys(Txn* txn){
+void TxnProcessor::MVCCUnlockWriteKeys(Txn* txn){
     for (set<Key>::iterator it = txn->writeset_.begin();it != txn->writeset_.end(); ++it)
     {
-        storage_.Unlock(*it);
+        storage_->Unlock(*it);
     }
+}
+
+void TxnProcessor::GarbageCollection(){
+    /*delete storage_;
+    storage_ = new MVCCStorage();
+    storage_->InitStorage();*/
 }
