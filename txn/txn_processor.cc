@@ -324,11 +324,11 @@ void TxnProcessor::RunOCCScheduler()
 {
     //
     // Implement this method!
+    Txn *txn;
     while (tp_.Active())
     {
         // Get the next new transaction request (if one is pending) and pass it to an execution thread.
         //Cek apakah ada yang bisa di pop
-        Txn *txn;
         if (txn_requests_.Pop(&txn))
         {
             //Run thread
@@ -339,14 +339,14 @@ void TxnProcessor::RunOCCScheduler()
         }
 
         // Deal with all transactions that have finished running (see below).
-        Txn *cek;
-        while (completed_txns_.Pop(&cek))
+        
+        while (completed_txns_.Pop(&txn))
         {
             //Validation Phase:
             bool valSucc = true;
-            for (Key rec : cek->readset_)
+            for (Key rec : txn->readset_)
             {
-                if (storage_->Timestamp(rec) > cek->occ_start_time_)
+                if (storage_->Timestamp(rec) > txn->occ_start_time_)
                 {
                     valSucc = false;
                     break;
@@ -354,9 +354,9 @@ void TxnProcessor::RunOCCScheduler()
             }
             if (valSucc)
             {
-                for (Key rec : cek->writeset_)
+                for (Key rec : txn->writeset_)
                 {
-                    if (storage_->Timestamp(rec) > cek->occ_start_time_)
+                    if (storage_->Timestamp(rec) > txn->occ_start_time_)
                     {
                         valSucc = false;
                         break;
@@ -367,25 +367,26 @@ void TxnProcessor::RunOCCScheduler()
             if (valSucc)
             {
                 //Apply all writes
-                ApplyWrites(cek);
+                ApplyWrites(txn);
                 //Mark transaction as commited
-                cek->status_ = COMMITTED;
+                txn->status_ = COMMITTED;
+                txn_results_.Push(txn);
             }
             else
             {
                 //Cleanup txn
-                cek->reads_.clear();
-                cek->writes_.clear();
-                cek->status_ = INCOMPLETE;
+                txn->reads_.clear();
+                txn->writes_.clear();
+                txn->status_ = INCOMPLETE;
                 //Restart
                 mutex_.Lock();
-                cek->unique_id_ = next_unique_id_;
+                txn->unique_id_ = next_unique_id_;
                 next_unique_id_++;
-                txn_requests_.Push(cek);
+                txn_requests_.Push(txn);
                 mutex_.Unlock();
             }
 
-            txn_results_.Push(cek);
+            
         }
     }
 }
