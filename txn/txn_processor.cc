@@ -414,11 +414,12 @@ void TxnProcessor::RunMVCCScheduler()
     // Note that you may need to create another execute method, like TxnProcessor::MVCCExecuteTxn.
     //
     // [For now, run serial scheduler in order to make it through the test suite]
+    Txn *txn;
     while (tp_.Active())
     {
         // Get the next new transaction request (if one is pending) and pass it to an execution thread.
         //Cek apakah ada yang bisa di pop
-        Txn *txn;
+        
         if (txn_requests_.Pop(&txn))
         {
             //Run thread
@@ -428,40 +429,39 @@ void TxnProcessor::RunMVCCScheduler()
                     txn));
         }
 
-        // Deal with all transactions that have finished running (see below).
-        Txn *cek;
-        while (completed_txns_.Pop(&cek))
-        {
-            //Validation Phase:
-            MVCCLockWriteKeys(cek);
-            bool valSucc = MVCCCheckWrites(cek);
-            //Commmit / restart
-            if (valSucc)
-            {
-                //Apply all writes then release all locks
-                ApplyWrites(cek);
-                MVCCUnlockWriteKeys(cek);
-                //Mark transaction as commited
-                cek->status_ = COMMITTED;
-            }
-            else
-            {
-                //Release all locks
-                MVCCUnlockWriteKeys(cek);
-                //Cleanup txn
-                cek->reads_.clear();
-                cek->writes_.clear();
-                cek->status_ = INCOMPLETE;
-                //Restart
-                mutex_.Lock();
-                cek->unique_id_ = next_unique_id_;
-                next_unique_id_++;
-                txn_requests_.Push(cek);
-                mutex_.Unlock();
-            }
+        // // Deal with all transactions that have finished running (see below).
+        // while (completed_txns_.Pop(&cek))
+        // {
+        //     //Validation Phase:
+        //     MVCCLockWriteKeys(cek);
+        //     bool valSucc = MVCCCheckWrites(cek);
+        //     //Commmit / restart
+        //     if (valSucc)
+        //     {
+        //         //Apply all writes then release all locks
+        //         ApplyWrites(cek);
+        //         MVCCUnlockWriteKeys(cek);
+        //         //Mark transaction as commited
+        //         cek->status_ = COMMITTED;
+        //     }
+        //     else
+        //     {
+        //         //Release all locks
+        //         MVCCUnlockWriteKeys(cek);
+        //         //Cleanup txn
+        //         cek->reads_.clear();
+        //         cek->writes_.clear();
+        //         cek->status_ = INCOMPLETE;
+        //         //Restart
+        //         mutex_.Lock();
+        //         cek->unique_id_ = next_unique_id_;
+        //         next_unique_id_++;
+        //         txn_requests_.Push(cek);
+        //         mutex_.Unlock();
+        //     }
 
-            txn_results_.Push(cek);
-        }
+        //     txn_results_.Push(cek);
+        // }
     }
 }
 
@@ -495,6 +495,35 @@ void TxnProcessor::MVCCExecuteTxn(Txn* txn){
 
     // Hand the txn back to the RunScheduler thread.
     completed_txns_.Push(txn);
+
+    MVCCLockWriteKeys(txn);
+    bool valSucc = MVCCCheckWrites(txn);
+    //Commmit / restart
+    if (valSucc)
+    {
+        //Apply all writes then release all locks
+        ApplyWrites(txn);
+        MVCCUnlockWriteKeys(txn);
+        //Mark transaction as commited
+        txn->status_ = COMMITTED;
+        txn_results_.Push(txn);
+    }
+    else
+    {
+        //Release all locks
+        MVCCUnlockWriteKeys(txn);
+        //Cleanup txn
+        txn->reads_.clear();
+        txn->writes_.clear();
+        txn->status_ = INCOMPLETE;
+        //Restart
+        mutex_.Lock();
+        txn->unique_id_ = next_unique_id_;
+        next_unique_id_++;
+        txn_requests_.Push(txn);
+        mutex_.Unlock();
+        
+    }
 }
 
 bool TxnProcessor::MVCCCheckWrites(Txn* txn){
@@ -502,8 +531,12 @@ bool TxnProcessor::MVCCCheckWrites(Txn* txn){
     for (set<Key>::iterator it = txn->writeset_.begin(); it != txn->writeset_.end() && result; ++it)
     {
         result = storage_->CheckWrite(*it, txn->unique_id_);
+        if(!result) {
+            //Optimisasi
+            return false;
+        }
     }
-    return result;
+    return true;
 }
 
 void TxnProcessor::MVCCLockWriteKeys(Txn* txn){

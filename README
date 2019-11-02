@@ -273,9 +273,14 @@ A few important notes on the implementation
     txn_requests_.Push(txn);
     mutex_.Unlock(); 
 
-2) Inside your Execution method of MVCC:  when you call read() method to read values from database, please don't forget to provide the third parameter(txn->unique_id_), otherwise the default value is 0 and you always read the oldest version.
+2) Inside your Execution method of MVCC:  
+when you call read() method to read values from database, 
+please don't forget to provide the third parameter(txn->unique_id_), 
+otherwise the default value is 0 and you always read the oldest version.
 
-3) For MVCC, the performance would be much better if you organize the versions in decreasing order. You can implement this by inserting the new version into the right place inside the write() method.
+3) For MVCC, the performance would be much better 
+if you organize the versions in decreasing order. Y
+ou can implement this by inserting the new version into the right place inside the write() method.
 
 
 ----------
