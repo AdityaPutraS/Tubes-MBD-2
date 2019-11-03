@@ -322,7 +322,6 @@ void TxnProcessor::ApplyWrites(Txn *txn)
 
 void TxnProcessor::RunOCCScheduler()
 {
-    //
     // Implement this method!
     Txn *txn;
     while (tp_.Active())
@@ -337,9 +336,7 @@ void TxnProcessor::RunOCCScheduler()
                     &TxnProcessor::ExecuteTxn,
                     txn));
         }
-
         // Deal with all transactions that have finished running (see below).
-        
         while (completed_txns_.Pop(&txn))
         {
             //Validation Phase:
@@ -385,23 +382,12 @@ void TxnProcessor::RunOCCScheduler()
                 txn_requests_.Push(txn);
                 mutex_.Unlock();
             }
-
-            
         }
     }
 }
 
 void TxnProcessor::RunOCCParallelScheduler()
 {
-    //
-    // Implement this method! Note that implementing OCC with parallel
-    // validation may need to create another method, like
-    // TxnProcessor::ExecuteTxnParallel.
-    // Note that you can use active_set_ and active_set_mutex_ we provided
-    // for you in the txn_processor.h
-    //
-    // [For now, run serial scheduler in order to make it through the test
-    // suite]
     RunOCCScheduler();
 }
 
@@ -419,7 +405,6 @@ void TxnProcessor::RunMVCCScheduler()
     {
         // Get the next new transaction request (if one is pending) and pass it to an execution thread.
         //Cek apakah ada yang bisa di pop
-        
         if (txn_requests_.Pop(&txn))
         {
             //Run thread
@@ -428,40 +413,6 @@ void TxnProcessor::RunMVCCScheduler()
                     &TxnProcessor::MVCCExecuteTxn,
                     txn));
         }
-
-        // // Deal with all transactions that have finished running (see below).
-        // while (completed_txns_.Pop(&cek))
-        // {
-        //     //Validation Phase:
-        //     MVCCLockWriteKeys(cek);
-        //     bool valSucc = MVCCCheckWrites(cek);
-        //     //Commmit / restart
-        //     if (valSucc)
-        //     {
-        //         //Apply all writes then release all locks
-        //         ApplyWrites(cek);
-        //         MVCCUnlockWriteKeys(cek);
-        //         //Mark transaction as commited
-        //         cek->status_ = COMMITTED;
-        //     }
-        //     else
-        //     {
-        //         //Release all locks
-        //         MVCCUnlockWriteKeys(cek);
-        //         //Cleanup txn
-        //         cek->reads_.clear();
-        //         cek->writes_.clear();
-        //         cek->status_ = INCOMPLETE;
-        //         //Restart
-        //         mutex_.Lock();
-        //         cek->unique_id_ = next_unique_id_;
-        //         next_unique_id_++;
-        //         txn_requests_.Push(cek);
-        //         mutex_.Unlock();
-        //     }
-
-        //     txn_results_.Push(cek);
-        // }
     }
 }
 
@@ -551,10 +502,4 @@ void TxnProcessor::MVCCUnlockWriteKeys(Txn* txn){
     {
         storage_->Unlock(*it);
     }
-}
-
-void TxnProcessor::GarbageCollection(){
-    /*delete storage_;
-    storage_ = new MVCCStorage();
-    storage_->InitStorage();*/
 }

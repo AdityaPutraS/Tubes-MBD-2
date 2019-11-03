@@ -1,5 +1,3 @@
-
-
 #include "txn/mvcc_storage.h"
 
 // Init the storage
@@ -98,7 +96,6 @@ bool MVCCStorage::CheckWrite(Key key, int txn_unique_id) {
         }
     }
     return true;
-
 }
 
 // MVCC Write, call this method only if CheckWrite return true.
@@ -129,5 +126,3 @@ void MVCCStorage::Write(Key key, Value value, int txn_unique_id) {
     newVersion->version_id_ = txn_unique_id;
     mvcc_data_[key]->push_back(newVersion);
 }
-
-
