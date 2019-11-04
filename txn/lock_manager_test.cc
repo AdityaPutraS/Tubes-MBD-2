@@ -1,10 +1,7 @@
-
-
 #include "txn/lock_manager.h"
 
 #include <set>
 #include <string>
-#include <iostream>
 
 #include "utils/testing.h"
 
@@ -18,7 +15,7 @@ TEST(LockManagerA_SimpleLocking) {
   Txn* t1 = reinterpret_cast<Txn*>(1);
   Txn* t2 = reinterpret_cast<Txn*>(2);
   Txn* t3 = reinterpret_cast<Txn*>(3);
-  cout << "Txn 1 acc" << endl;
+
   // Txn 1 acquires read lock.
   lm.ReadLock(t1, 101);
   ready_txns.push_back(t1);   // Txn 1 is ready.
@@ -28,7 +25,6 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(1, ready_txns.size());
   EXPECT_EQ(t1, ready_txns.at(0));
 
-  cout << "Txn 2 minta, tp gagal" << endl;
   // Txn 2 requests write lock. Not granted.
   lm.WriteLock(t2, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
@@ -36,7 +32,6 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(t1, owners[0]);
   EXPECT_EQ(1, ready_txns.size());
 
-  cout << "Txn 3 minta, gagal juga" << endl;
   // Txn 3 requests read lock. Not granted.
   lm.ReadLock(t3, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
@@ -44,7 +39,6 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(t1, owners[0]);
   EXPECT_EQ(1, ready_txns.size());
 
-  cout << "Txn 1 lepas, 2 dapet" << endl;
   // Txn 1 releases lock.  Txn 2 is granted write lock.
   lm.Release(t1, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
@@ -53,7 +47,6 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(2, ready_txns.size());
   EXPECT_EQ(t2, ready_txns.at(1));
 
-  cout << "Txn 2 lepas, 3 dapet" << endl;
   // Txn 2 releases lock.  Txn 3 is granted read lock.
   lm.Release(t2, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
@@ -62,9 +55,7 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(3, ready_txns.size());
   EXPECT_EQ(t3, ready_txns.at(2));
 
-  cout << "Panggil end" << endl;
   END;
-  cout << "Kelar test1" << endl;
 }
 
 TEST(LockManagerA_LocksReleasedOutOfOrder) {
@@ -109,7 +100,7 @@ TEST(LockManagerA_LocksReleasedOutOfOrder) {
   END;
 }
 
-/*
+
 TEST(LockManagerB_SimpleLocking) {
   deque<Txn*> ready_txns;
   LockManagerB lm(&ready_txns);
@@ -192,11 +183,10 @@ TEST(LockManagerB_LocksReleasedOutOfOrder) {
 
   END;
 }
-*/
+
 int main(int argc, char** argv) {
   LockManagerA_SimpleLocking();
   LockManagerA_LocksReleasedOutOfOrder();
-  // LockManagerB_SimpleLocking();
-  // LockManagerB_LocksReleasedOutOfOrder();
+  /*LockManagerB_SimpleLocking();
+  LockManagerB_LocksReleasedOutOfOrder();*/
 }
-

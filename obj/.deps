@@ -169,8 +169,9 @@ obj/txn/txn_processor_test.o: txn/txn_processor_test.cc \
  utils/static_thread_pool.h /usr/include/c++/7/stdlib.h \
  utils/thread_pool.h utils/task.h /usr/include/c++/7/cassert \
  utils/condition.h txn/txn_types.h utils/testing.h
-obj/txn/storage.o: txn/storage.cc /usr/include/stdc-predef.h \
- txn/storage.h /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/limits.h \
+obj/txn/mvcc_storage.o: txn/mvcc_storage.cc /usr/include/stdc-predef.h \
+ txn/mvcc_storage.h txn/storage.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/syslimits.h \
  /usr/include/limits.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -819,9 +820,8 @@ obj/txn/txn_processor.o: txn/txn_processor.cc /usr/include/stdc-predef.h \
  utils/static_thread_pool.h /usr/include/c++/7/stdlib.h \
  utils/thread_pool.h utils/task.h /usr/include/c++/7/cassert \
  utils/condition.h
-obj/txn/mvcc_storage.o: txn/mvcc_storage.cc /usr/include/stdc-predef.h \
- txn/mvcc_storage.h txn/storage.h \
- /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/limits.h \
+obj/txn/storage.o: txn/storage.cc /usr/include/stdc-predef.h \
+ txn/storage.h /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/syslimits.h \
  /usr/include/limits.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \

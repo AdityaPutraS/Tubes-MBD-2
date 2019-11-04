@@ -1,4 +1,3 @@
-
 #include "txn/txn_processor.h"
 
 #include <vector>
@@ -77,7 +76,7 @@ void Benchmark(const vector<LoadGen*>& lg) {
   deque<Txn*> doneTxns;
 
   // For each MODE...
-  for (CCMode mode = SERIAL;
+  for (CCMode mode = MVCC;
       mode <= MVCC;
       mode = static_cast<CCMode>(mode+1)) {
     // Print out mode name.
@@ -87,31 +86,34 @@ void Benchmark(const vector<LoadGen*>& lg) {
     for (uint32 exp = 0; exp < lg.size(); exp++) {
       double throughput[2];
       for (uint32 round = 0; round < 2; round++) {
+
         int txn_count = 0;
 
         // Create TxnProcessor in next mode.
         TxnProcessor* p = new TxnProcessor(mode);
+
         // Record start time.
         double start = GetTime();
 
         // Start specified number of txns running.
         for (int i = 0; i < active_txns; i++)
           p->NewTxnRequest(lg[exp]->NewTxn());
+
         // Keep 100 active txns at all times for the first full second.
         while (GetTime() < start + 0.5) {
-          // cout << "A" << endl;
           Txn* txn = p->GetTxnResult();
-          // cout << "AB" << endl;
           doneTxns.push_back(txn);
           txn_count++;
           p->NewTxnRequest(lg[exp]->NewTxn());
         }
+
         // Wait for all of them to finish.
         for (int i = 0; i < active_txns; i++) {
           Txn* txn = p->GetTxnResult();
           doneTxns.push_back(txn);
           txn_count++;
         }
+
         // Record end time.
         double end = GetTime();
       
@@ -247,4 +249,3 @@ int main(int argc, char** argv) {
     delete lg[i];
   lg.clear();
 }
-
